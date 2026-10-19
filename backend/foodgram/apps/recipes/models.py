@@ -94,3 +94,45 @@ class RecipeIngredient(models.Model):
 
     def __str__(self):
         return f'{self.ingredient} - {self.amount}'
+
+
+class UserRecipeBase(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='%(class)ss',
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='%(class)ss',
+    )
+
+    class Meta:
+        abstract = True
+        constraints = (
+            UniqueConstraint(
+                fields=('user', 'recipe'),
+                name='%(app_label)s_%(class)s_unique_user_recipe',
+            ),
+        )
+
+
+class Favorite(UserRecipeBase):
+
+    class Meta(UserRecipeBase.Meta):
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
+
+    def __str__(self):
+        return f'{self.user} добавил(а) в избранное {self.recipe}'
+
+
+class ShoppingCart(UserRecipeBase):
+
+    class Meta(UserRecipeBase.Meta):
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Списки покупок'
+
+    def __str__(self):
+        return f'{self.user} добавил(а) в список покупок {self.recipe}'
