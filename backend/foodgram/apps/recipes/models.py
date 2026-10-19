@@ -1,11 +1,15 @@
 from django.db import models
 from django.db.models import UniqueConstraint
+from django.core.validators import MinValueValidator
+from django.conf import settings
 
 
 TAG_NAME_MAX_LENGTH = 32
 INGREDIENT_NAME_MAX_LENGTH = 128
 RECIPE_NAME_MAX_LENGTH = 256
 MEASUREMENT_NAME_MAX_LENGTH = 64
+MIN_COOKING_TIME = 1
+MIN_AMOUNT_OF_INGREDIENTS = 1
 
 
 class Tag(models.Model):
@@ -38,3 +42,55 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
+
+
+class Recipe(models.Model):
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='recipes'
+    )
+    name = models.CharField(max_length=RECIPE_NAME_MAX_LENGTH)
+    description = models.TextField()
+    image = models.ImageField(upload_to='recipes/images/')
+    cooking_time = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(MIN_COOKING_TIME)],
+    )
+    tags = models.ManyToManyField(Tag)
+    ingredients = models.ManyToManyField(
+        Ingredient, through='RecipeIngredient'
+    )
+    pub_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
+        ordering = ('-pub_date',)
+
+    def __str__(self):
+        return self.name
+
+
+class RecipeIngredient(models.Model):
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE, related_name='recipe_ingredients'
+    )
+    ingredient = models.ForeignKey(
+        Ingredient, on_delete=models.PROTECT, related_name='recipe_ingredients'
+    )
+    amount = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(MIN_AMOUNT_OF_INGREDIENTS)],
+    )
+
+    class Meta:
+        verbose_name = 'Ингредиент в рецепте'
+        verbose_name_plural = 'Ингредиенты в рецептах'
+        constraints = (
+            UniqueConstraint(
+                fields=('recipe', 'ingredient'),
+                name='unique_pair_of_recipe_and_ingredient',
+            ),
+        )
+
+    def __str__(self):
+        return f'{self.ingredient} - {self.amount}'
