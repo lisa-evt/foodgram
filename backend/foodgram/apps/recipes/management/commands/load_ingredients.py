@@ -2,9 +2,12 @@ import csv
 import json
 from pathlib import Path
 
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.recipes.models import Ingredient
+
+FIELDS = ('name', 'measurement_unit')
 
 
 class Command(BaseCommand):
@@ -18,22 +21,27 @@ class Command(BaseCommand):
         if not path.exists():
             raise CommandError(f'Файл не найден: {path}')
 
-        if path.suffix == '.csv':
-            with open(path, encoding='utf-8') as file:
-                rows = [
-                    {'name': name, 'measurement_unit': unit}
-                    for name, unit in csv.reader(file)
-                ]
-        elif path.suffix == '.json':
-            with open(path, encoding='utf-8') as file:
+        with open(path, encoding='utf-8') as file:
+            if path.suffix == '.csv':
+                rows = list(csv.DictReader(file, fieldnames=FIELDS))
+            elif path.suffix == '.json':
                 rows = json.load(file)
-        else:
-            raise CommandError('Поддерживаются только .csv и .json')
+            else:
+                raise CommandError('Поддерживаются только .csv и .json')
 
-        Ingredient.objects.bulk_create(
-            [Ingredient(**row) for row in rows],
-            ignore_conflicts=True,
-        )
+        ingredients = []
+        for number, row in enumerate(rows, start=1):
+            ingredient = Ingredient(**row)
+            try:
+                ingredient.full_clean(validate_unique=False)
+            except ValidationError as error:
+                self.stdout.write(self.style.WARNING(
+                    f'Строка {number} пропущена: {error}'
+                ))
+                continue
+            ingredients.append(ingredient)
+
+        Ingredient.objects.bulk_create(ingredients, ignore_conflicts=True)
         self.stdout.write(self.style.SUCCESS(
-            f'Обработано записей: {len(rows)}')
-        )
+            f'Обработано записей: {len(ingredients)}'
+        ))
