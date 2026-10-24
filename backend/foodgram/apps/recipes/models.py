@@ -1,8 +1,7 @@
+from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
-from django.core.validators import MinValueValidator
-from django.conf import settings
-
 
 TAG_NAME_MAX_LENGTH = 32
 INGREDIENT_NAME_MAX_LENGTH = 128

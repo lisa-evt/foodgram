@@ -2,10 +2,9 @@ import csv
 import json
 from pathlib import Path
 
+from apps.recipes.models import Ingredient
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
-
-from apps.recipes.models import Ingredient
 
 FIELDS = ('name', 'measurement_unit')
 
