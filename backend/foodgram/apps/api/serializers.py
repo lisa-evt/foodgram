@@ -1,6 +1,7 @@
 from apps.recipes.models import Tag, Ingredient
 from apps.users.models import User
 from rest_framework import serializers
+from django.contrib.auth import authenticate
 import django_filters
 
 
@@ -29,4 +30,15 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         return user
 
 
+class TokenSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(trim_whitespace=False)
 
+    def validate(self, attrs):
+        user = authenticate(username=attrs['email'], password=attrs['password'])
+        if user is None:
+            raise serializers.ValidationError(
+                'Введены неправильные данные для входа.'
+            )
+        attrs['user'] = user
+        return attrs
