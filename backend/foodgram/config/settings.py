@@ -33,6 +33,7 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
+    'djoser',
 ]
 
 LOCAL_APPS = [
@@ -83,6 +84,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+}
+
+# DJOSER settings
+
+DJOSER = {
+    'SERIALIZERS': {
+        'user': 'apps.api.serializers.CustomUserSerializer',
+        'current_user': 'apps.api.serializers.CustomUserSerializer',
+    },
 }
 
 
@@ -137,4 +147,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = 'users.User'
+
+MEDIA_ROOT = BASE_DIR / 'media'
