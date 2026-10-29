@@ -1,9 +1,10 @@
 import base64
-from apps.recipes.models import Tag, Ingredient
+
+from apps.recipes.models import Ingredient, Tag
 from apps.users.models import User
-from rest_framework import serializers
 from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer
+from rest_framework import serializers
 
 
 class TagSerializer(serializers.ModelSerializer):

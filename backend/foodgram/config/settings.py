@@ -3,8 +3,8 @@
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
 import django_stubs_ext
+from dotenv import load_dotenv
 
 django_stubs_ext.monkeypatch()
 
