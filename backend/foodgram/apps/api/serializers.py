@@ -1,10 +1,11 @@
 import base64
 
-from apps.recipes.models import Ingredient, Tag
+from apps.recipes.models import Ingredient, Tag, Recipe, RecipeIngredient
 from apps.users.models import User
 from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
+from apps.recipes.models import MIN_AMOUNT_OF_INGREDIENTS
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -56,3 +57,41 @@ class AvatarSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('avatar',)
+
+
+class RecipeIngredientSerializer(serializers.Serializer):
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all()
+    )
+    amount = serializers.IntegerField(min_value=MIN_AMOUNT_OF_INGREDIENTS)
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    ingredients = RecipeIngredientSerializer(many=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(),
+        many=True
+    )
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'ingredients',
+            'tags',
+            'image',
+            'name',
+            'text',
+            'cooking_time'
+        )
+
+    def create(self, validated_data):
+        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
+        recipe = Recipe.objects.create(**validated_data)
+        recipe.tags.set(tags)
+        recipe_ingredients = [RecipeIngredient(recipe=recipe, ingredient=i['id'], amount=i['amount']) for i in ingredients]
+
+        RecipeIngredient.objects.bulk_create(recipe_ingredients)
+
+        return recipe
