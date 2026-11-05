@@ -1,6 +1,6 @@
 from apps.api.filters import IngredientFilter
 from apps.api.serializers import (AvatarSerializer, IngredientSerializer,
-                                  TagSerializer)
+                                  TagSerializer, RecipeSerializer)
 from apps.recipes.models import Ingredient, Tag
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
@@ -41,3 +41,13 @@ class UserAvatarView(APIView):
     def delete(self, request):
         request.user.avatar.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = ...
+    serializer_class = RecipeSerializer
+    http_method_names = ('get', 'post', 'patch', 'delete')
+    permission_classes = ...
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)г8бд
