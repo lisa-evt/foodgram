@@ -1,10 +1,14 @@
 from apps.api.filters import IngredientFilter
+from apps.api.permissions import IsAuthorOrReadOnly
 from apps.api.serializers import (AvatarSerializer, IngredientSerializer,
-                                  RecipeSerializer, TagSerializer)
-from apps.recipes.models import Ingredient, Tag
+                                  RecipeSerializer, RecipeShortSerializer,
+                                  TagSerializer)
+from apps.recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
+from django.shortcuts import (IsAuthenticated, Response, get_object_or_404,
+                              status)
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions, status, viewsets
-from rest_framework.response import Response
+from rest_framework import permissions, viewsets
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 
 
@@ -44,10 +48,58 @@ class UserAvatarView(APIView):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = ...
+    queryset = Recipe.objects.select_related('author').prefetch_related(
+        'tags', 'recipe_ingredients__ingredient'
+    )
     serializer_class = RecipeSerializer
     http_method_names = ('get', 'post', 'patch', 'delete')
-    permission_classes = ...
+    permission_classes = (IsAuthorOrReadOnly,)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def _add_or_remove(self, request, pk, model):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        if request.method == 'POST':
+            _, created = model.objects.get_or_create(
+                user=request.user,
+                recipe=recipe
+            )
+            if not created:
+                return Response(
+                    {'errors': 'Рецепт уже добавлен.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            return Response(
+                RecipeShortSerializer(
+                    recipe,
+                    context={'request': request}
+                ).data,
+                status=status.HTTP_201_CREATED
+            )
+        deleted, _ = model.objects.filter(
+            user=request.user,
+            recipe=recipe
+        ).delete()
+        if not deleted:
+            return Response(
+                {'errors': 'Рецепта нет в списке.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=True,
+        methods=('post', 'delete'),
+        permission_classes=(IsAuthenticated,)
+    )
+    def favorite(self, request, pk=None):
+        return self._add_or_remove(request, pk, Favorite)
+
+    @action(
+        detail=True,
+        methods=('post', 'delete'),
+        permission_classes=(IsAuthenticated,)
+    )
+    def shopping_cart(self, request, pk=None):
+        return self._add_or_remove(request, pk, ShoppingCart)

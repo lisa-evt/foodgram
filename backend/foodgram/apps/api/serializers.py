@@ -5,9 +5,9 @@ from apps.recipes.models import (MIN_AMOUNT_OF_INGREDIENTS, Favorite,
                                  ShoppingCart, Tag)
 from apps.users.models import Subscription, User
 from django.core.files.base import ContentFile
+from django.db import transaction
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
-from django.db import transaction
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -215,3 +215,9 @@ class RecipeSerializer(serializers.ModelSerializer):
             many=True
         ).data
         return data
+
+
+class RecipeShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
