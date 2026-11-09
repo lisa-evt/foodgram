@@ -4,11 +4,12 @@ from apps.api.serializers import (AvatarSerializer, IngredientSerializer,
                                   RecipeSerializer, RecipeShortSerializer,
                                   TagSerializer)
 from apps.recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
-from django.shortcuts import (IsAuthenticated, Response, get_object_or_404,
-                              status)
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 

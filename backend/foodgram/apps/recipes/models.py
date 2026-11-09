@@ -50,7 +50,7 @@ class Recipe(models.Model):
         related_name='recipes'
     )
     name = models.CharField(max_length=RECIPE_NAME_MAX_LENGTH)
-    description = models.TextField()
+    text = models.TextField()
     image = models.ImageField(upload_to='recipes/images/')
     cooking_time = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(MIN_COOKING_TIME)],
