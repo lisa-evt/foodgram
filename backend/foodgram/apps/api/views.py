@@ -1,6 +1,6 @@
 from apps.api.filters import IngredientFilter
 from apps.api.serializers import (AvatarSerializer, IngredientSerializer,
-                                  TagSerializer, RecipeSerializer)
+                                  RecipeSerializer, TagSerializer)
 from apps.recipes.models import Ingredient, Tag
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
@@ -50,4 +50,4 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = ...
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)г8бд
+        serializer.save(author=self.request.user)
