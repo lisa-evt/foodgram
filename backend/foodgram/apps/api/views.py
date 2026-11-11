@@ -3,19 +3,19 @@ from apps.api.permissions import IsAuthorOrReadOnly
 from apps.api.serializers import (AvatarSerializer, IngredientSerializer,
                                   RecipeSerializer, RecipeShortSerializer,
                                   TagSerializer, UserWithRecipesSerializer)
-from apps.recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
+from apps.recipes.models import (Favorite, Ingredient, Recipe,
+                                 RecipeIngredient, ShoppingCart, Tag)
+from apps.users.models import Subscription
+from django.contrib.auth import get_user_model
+from django.db.models import Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.urls import reverse
-from django.http import HttpResponse
-from apps.recipes.models import RecipeIngredient
-from apps.users.models import Subscription
-from django.db.models import Sum
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
