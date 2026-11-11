@@ -2,7 +2,7 @@ from apps.api.filters import IngredientFilter
 from apps.api.permissions import IsAuthorOrReadOnly
 from apps.api.serializers import (AvatarSerializer, IngredientSerializer,
                                   RecipeSerializer, RecipeShortSerializer,
-                                  TagSerializer)
+                                  TagSerializer, UserWithRecipesSerializer)
 from apps.recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -13,7 +13,11 @@ from rest_framework.views import APIView
 from django.urls import reverse
 from django.http import HttpResponse
 from apps.recipes.models import RecipeIngredient
+from apps.users.models import Subscription
 from django.db.models import Sum
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -154,3 +158,57 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response({
             'short-link': request.build_absolute_uri(relative_url)
         })
+
+
+class SubscribeView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, id):
+        author = get_object_or_404(User, pk=id)
+        if author == request.user:
+            return Response(
+                {'errors': 'Нельзя подписаться на себя.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        _, created = Subscription.objects.get_or_create(
+            user=request.user,
+            author=author,
+        )
+        if not created:
+            return Response(
+                {'errors': 'Вы уже подписаны на этого автора.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            UserWithRecipesSerializer(
+                author,
+                context={'request': request},
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def delete(self, request, id):
+        author = get_object_or_404(User, pk=id)
+        deleted, _ = Subscription.objects.filter(
+            user=request.user,
+            author=author,
+        ).delete()
+        if not deleted:
+            return Response(
+                {'errors': 'Вы не были подписаны на этого автора.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SubscriptionsView(viewsets.ListAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = UserWithRecipesSerializer
+
+    def get_queryset(self):
+        return (
+            User.objects
+            .filter(subscribers__user=self.request.user)
+            .prefetch_related('recipes')
+            .order_by('id')
+        )

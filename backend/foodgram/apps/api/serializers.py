@@ -221,3 +221,22 @@ class RecipeShortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class UserWithRecipesSerializer(UserSerializer):
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField(
+        source='recipes.count', read_only=True
+    )
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
+
+    def get_recipes(self, author):
+        recipes = author.recipes.all()
+        limit = self.context['request'].query_params.get('recipes_limit')
+        if limit and limit.isdigit():
+            recipes = recipes[:int(limit)]
+        return RecipeShortSerializer(
+            recipes, many=True, context=self.context
+        ).data
