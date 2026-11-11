@@ -1,4 +1,5 @@
 from apps.api.filters import IngredientFilter
+from apps.api.pagination import LimitPageNumberPagination
 from apps.api.permissions import IsAuthorOrReadOnly
 from apps.api.serializers import (AvatarSerializer, IngredientSerializer,
                                   RecipeSerializer, RecipeShortSerializer,
@@ -63,6 +64,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     http_method_names = ('get', 'post', 'patch', 'delete')
     permission_classes = (IsAuthorOrReadOnly,)
+    pagination_class = LimitPageNumberPagination
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -163,6 +165,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 class SubscribeView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = LimitPageNumberPagination
 
     def post(self, request, id):
         author = get_object_or_404(User, pk=id)
@@ -205,6 +208,7 @@ class SubscribeView(APIView):
 class SubscriptionsView(ListAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = UserWithRecipesSerializer
+    pagination_class = LimitPageNumberPagination
 
     def get_queryset(self):
         return (
