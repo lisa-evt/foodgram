@@ -26,6 +26,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     permission_classes = (permissions.AllowAny,)
+    pagination_class = None
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
@@ -34,10 +35,12 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.AllowAny,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
+    pagination_class = None
 
 
 class UserAvatarView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = None
 
     def put(self, request):
         serializer = AvatarSerializer(
