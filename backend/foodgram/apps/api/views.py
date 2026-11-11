@@ -14,6 +14,7 @@ from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -201,7 +202,7 @@ class SubscribeView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class SubscriptionsView(viewsets.ListAPIView):
+class SubscriptionsView(ListAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = UserWithRecipesSerializer
 
