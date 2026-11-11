@@ -8,10 +8,10 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from django.urls import reverse
+from django.http import HttpResponse
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
@@ -92,7 +92,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=('post', 'delete'),
-        permission_classes=(IsAuthenticated,)
+        permission_classes=(permissions.IsAuthenticated,)
     )
     def favorite(self, request, pk=None):
         return self._add_or_remove(request, pk, Favorite)
@@ -100,7 +100,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=('post', 'delete'),
-        permission_classes=(IsAuthenticated,)
+        permission_classes=(permissions.IsAuthenticated,)
     )
     def shopping_cart(self, request, pk=None):
         return self._add_or_remove(request, pk, ShoppingCart)
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='get-link',
+        permission_classes=(permissions.AllowAny,),
+    )
+    def get_link(self, request, pk=None):
+        recipe = self.get_object()
+        relative_url = reverse('short_link', kwargs={'id': recipe.pk})
+        return Response({
+            'short-link': request.build_absolute_uri(relative_url)
+        })
+
+
