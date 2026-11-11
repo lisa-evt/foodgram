@@ -12,6 +12,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.urls import reverse
 from django.http import HttpResponse
+from apps.recipes.models import RecipeIngredient
+from django.db.models import Sum
+
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
@@ -106,6 +109,40 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return self._add_or_remove(request, pk, ShoppingCart)
 
     @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=(permissions.IsAuthenticated,),
+    )
+    def download_shopping_cart(self, request):
+        ingredients = (
+            RecipeIngredient.objects
+            .filter(recipe__shoppingcart__user=request.user)
+            .values('ingredient__name', 'ingredient__measurement_unit')
+            .annotate(total=Sum('amount'))
+            .order_by('ingredient__name')
+        )
+        if not ingredients:
+            return Response(
+                {'errors': 'Корзина пуста.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        lines = [
+            '{} ({}) — {}'.format(
+                item['ingredient__name'],
+                item['ingredient__measurement_unit'],
+                item['total'],
+            )
+            for item in ingredients
+        ]
+        response = HttpResponse(
+            '\n'.join(lines), content_type='text/plain; charset=utf-8'
+        )
+        response['Content-Disposition'] = (
+            'attachment; filename="shopping_list.txt"'
+        )
+        return response
+
+    @action(
         detail=True,
         methods=['get'],
         url_path='get-link',
@@ -117,5 +154,3 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response({
             'short-link': request.build_absolute_uri(relative_url)
         })
-
-
