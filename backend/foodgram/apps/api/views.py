@@ -1,4 +1,4 @@
-from apps.api.filters import IngredientFilter
+from apps.api.filters import IngredientFilter, RecipeFilterSet
 from apps.api.pagination import LimitPageNumberPagination
 from apps.api.permissions import IsAuthorOrReadOnly
 from apps.api.serializers import (AvatarSerializer, IngredientSerializer,
@@ -68,6 +68,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     http_method_names = ('get', 'post', 'patch', 'delete')
     permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = LimitPageNumberPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilterSet
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
