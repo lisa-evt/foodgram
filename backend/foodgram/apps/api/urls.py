@@ -1,5 +1,5 @@
-from apps.api.views import (IngredientViewSet, RecipeViewSet, TagViewSet,
-                            UserAvatarView, SubscribeView, SubscriptionsView)
+from apps.api.views import (IngredientViewSet, RecipeViewSet, SubscribeView,
+                            SubscriptionsView, TagViewSet, UserAvatarView)
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 

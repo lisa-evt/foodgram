@@ -230,7 +230,9 @@ class UserWithRecipesSerializer(CustomUserSerializer):
     )
 
     class Meta(CustomUserSerializer.Meta):
-        fields = CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count')
+        fields = CustomUserSerializer.Meta.fields + (
+            'recipes', 'recipes_count'
+        )
 
     def get_recipes(self, author):
         recipes = author.recipes.all()
