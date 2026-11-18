@@ -20,6 +20,7 @@ services:
     env_file: .env
     environment:
       STATIC_ROOT_PATH: /backend_static/static
+      DB_HOST: db
     volumes:
       - static:/backend_static
       - media:/app/media
