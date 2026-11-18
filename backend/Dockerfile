@@ -11,7 +11,7 @@ RUN pip install -r requirements/production.txt
 
 RUN useradd --create-home appuser
 RUN mkdir -p /backend_static /app/media && chown appuser:appuser /backend_static /app/media
-COPY --chown=appuser:appuser . .
+COPY --chown=appuser:appuser foodgram/ .
 USER appuser
 
 EXPOSE 8000
