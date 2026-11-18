@@ -150,6 +150,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 
+STATIC_ROOT = os.environ.get('STATIC_ROOT_PATH', BASE_DIR / 'backend_static/static')
 STATIC_URL = 'static/'
 
 # Default primary key field type
