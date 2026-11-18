@@ -1,6 +1,5 @@
 -r base.txt
 django-stubs==6.1.2
-django-stubs-ext==6.1.2
 djangorestframework-stubs==3.18.1
 flake8==7.5.0
 isort==9.0.2
