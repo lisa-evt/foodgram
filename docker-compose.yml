@@ -1,0 +1,64 @@
+volumes:
+  pg_data:
+  static:
+  media:
+
+services:
+  db:
+    image: postgres:16
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend/
+    env_file: .env
+    environment:
+      STATIC_ROOT_PATH: /backend_static/static
+    volumes:
+      - static:/backend_static
+      - media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - >-
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput &&
+        exec gunicorn config.wsgi:application
+        --bind 0.0.0.0:8000
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/tags/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    build: ./frontend/
+    volumes:
+      - static:/frontend_static
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: cp -r /app/build/. /frontend_static/
+
+  gateway:
+    build: ./gateway/
+    ports:
+      - "9000:80"
+    volumes:
+      - static:/staticfiles:ro
+      - media:/media:ro
+    depends_on:
+      frontend:
+        condition: service_completed_successfully
+      backend:
+        condition: service_healthy
