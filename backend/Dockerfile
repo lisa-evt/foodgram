@@ -10,6 +10,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 RUN useradd --create-home appuser
+RUN mkdir -p /backend_static /app/media && chown appuser:appuser /backend_static /app/media
 COPY --chown=appuser:appuser . .
 USER appuser
 
