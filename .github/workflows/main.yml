@@ -37,7 +37,6 @@ jobs:
       - name: Install dependencies and run tests
         run: |
           cd frontend/
-          npm ci
           npm run test
 
   # ---------- Сборка и push образов ----------
