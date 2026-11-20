@@ -24,6 +24,22 @@ jobs:
       - name: Run flake8
         run: python -m flake8 backend/
 
+  frontend_tests:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 21
+      - name: Install dependencies and run tests
+        run: |
+          cd frontend/
+          npm install --legacy-peer-deps
+          npm run test
+
   # ---------- Сборка и push образов ----------
   build_backend_and_push_to_docker_hub:
     name: Push backend image to Docker Hub
@@ -49,6 +65,7 @@ jobs:
   build_frontend_and_push_to_docker_hub:
     name: Push frontend image to Docker Hub
     runs-on: ubuntu-latest
+    needs: frontend_tests
     steps:
       - name: Check out code
         uses: actions/checkout@v4
