@@ -12,8 +12,16 @@ MIN_AMOUNT_OF_INGREDIENTS = 1
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=TAG_NAME_MAX_LENGTH, unique=True)
-    slug = models.SlugField(max_length=TAG_NAME_MAX_LENGTH, unique=True)
+    name = models.CharField(
+        verbose_name='Название',
+        max_length=TAG_NAME_MAX_LENGTH,
+        unique=True,
+    )
+    slug = models.SlugField(
+        verbose_name='Слаг',
+        max_length=TAG_NAME_MAX_LENGTH,
+        unique=True,
+    )
 
     class Meta:
         verbose_name = 'Тег'
@@ -25,8 +33,14 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    name = models.CharField(max_length=INGREDIENT_NAME_MAX_LENGTH)
-    measurement_unit = models.CharField(max_length=MEASUREMENT_NAME_MAX_LENGTH)
+    name = models.CharField(
+        verbose_name='Название',
+        max_length=INGREDIENT_NAME_MAX_LENGTH,
+    )
+    measurement_unit = models.CharField(
+        verbose_name='Единица измерения',
+        max_length=MEASUREMENT_NAME_MAX_LENGTH,
+    )
 
     class Meta:
         verbose_name = 'Ингредиент'
@@ -46,20 +60,36 @@ class Ingredient(models.Model):
 class Recipe(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name='Автор',
         on_delete=models.CASCADE,
-        related_name='recipes'
+        related_name='recipes',
     )
-    name = models.CharField(max_length=RECIPE_NAME_MAX_LENGTH)
-    text = models.TextField()
-    image = models.ImageField(upload_to='recipes/images/')
+    name = models.CharField(
+        verbose_name='Название',
+        max_length=RECIPE_NAME_MAX_LENGTH,
+    )
+    text = models.TextField(verbose_name='Описание')
+    image = models.ImageField(
+        verbose_name='Изображение',
+        upload_to='recipes/images/',
+    )
     cooking_time = models.PositiveSmallIntegerField(
+        verbose_name='Время приготовления (мин)',
         validators=[MinValueValidator(MIN_COOKING_TIME)],
     )
-    tags = models.ManyToManyField(Tag)
-    ingredients = models.ManyToManyField(
-        Ingredient, through='RecipeIngredient'
+    tags = models.ManyToManyField(
+        Tag,
+        verbose_name='Теги',
     )
-    pub_date = models.DateTimeField(auto_now_add=True)
+    ingredients = models.ManyToManyField(
+        Ingredient,
+        verbose_name='Ингредиенты',
+        through='RecipeIngredient',
+    )
+    pub_date = models.DateTimeField(
+        verbose_name='Дата публикации',
+        auto_now_add=True,
+    )
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -72,12 +102,19 @@ class Recipe(models.Model):
 
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, related_name='recipe_ingredients'
+        Recipe,
+        verbose_name='Рецепт',
+        on_delete=models.CASCADE,
+        related_name='recipe_ingredients',
     )
     ingredient = models.ForeignKey(
-        Ingredient, on_delete=models.PROTECT, related_name='recipe_ingredients'
+        Ingredient,
+        verbose_name='Ингредиент',
+        on_delete=models.PROTECT,
+        related_name='recipe_ingredients',
     )
     amount = models.PositiveSmallIntegerField(
+        verbose_name='Количество',
         validators=[MinValueValidator(MIN_AMOUNT_OF_INGREDIENTS)],
     )
 
@@ -98,11 +135,13 @@ class RecipeIngredient(models.Model):
 class UserRecipeBase(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name='Пользователь',
         on_delete=models.CASCADE,
         related_name='%(class)ss',
     )
     recipe = models.ForeignKey(
         Recipe,
+        verbose_name='Рецепт',
         on_delete=models.CASCADE,
         related_name='%(class)ss',
     )
