@@ -13,13 +13,18 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
+
 
 User = get_user_model()
+
+AUTHENTICATED_ACTIONS = ('me', 'avatar', 'subscribe')
+ADMIN_ONLY_ACTIONS = ('update', 'partial_update', 'destroy')
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -38,25 +43,74 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
 
-class UserAvatarView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    pagination_class = None
+class UserViewSet(DjoserUserViewSet):
 
-    def put(self, request):
-        serializer = AvatarSerializer(
-            request.user,
-            data=request.data,
-            context={'request': request},
-        )
-        serializer.is_valid(raise_exception=True)
-        old_avatar = request.user.avatar.name
-        serializer.save()
-        if old_avatar:
-            request.user.avatar.storage.delete(old_avatar)
-        return Response(serializer.data)
+    def get_permissions(self):
+        if self.action in AUTHENTICATED_ACTIONS:
+            return (IsAuthenticated(),)
+        if self.action in ADMIN_ONLY_ACTIONS:
+            return (IsAdminUser(),)
+        return super().get_permissions()
 
-    def delete(self, request):
-        request.user.avatar.delete()
+    @action(detail=False, methods=('get',))
+    def me(self, request, *args, **kwargs):
+        return super().me(request, *args, **kwargs)
+
+    @action(detail=False, methods=('put', 'delete'), url_path='me/avatar')
+    def avatar(self, request):
+        user = request.user
+        if request.method == 'PUT':
+            serializer = AvatarSerializer(
+                user,
+                data=request.data,
+                context={'request': request},
+            )
+            serializer.is_valid(raise_exception=True)
+            old_avatar = user.avatar.name
+            serializer.save()
+            if old_avatar:
+                user.avatar.storage.delete(old_avatar)
+            return Response(serializer.data)
+        user.avatar.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=('post', 'delete'))
+    def subscribe(self, request, id=None):
+        author = self.get_object()
+        user = request.user
+
+        if request.method == 'POST':
+            if user == author:
+                return Response(
+                    {'errors': 'Нельзя подписаться на себя.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            _, created = Subscription.objects.get_or_create(
+                user=user,
+                author=author,
+            )
+            if not created:
+                return Response(
+                    {'errors': 'Вы уже подписаны на этого автора.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response(
+                UserWithRecipesSerializer(
+                    author,
+                    context={'request': request},
+                ).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        deleted, _ = Subscription.objects.filter(
+            user=user,
+            author=author,
+        ).delete()
+        if not deleted:
+            return Response(
+                {'errors': 'Вы не были подписаны на этого автора.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -166,48 +220,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response({
             'short-link': request.build_absolute_uri(relative_url)
         })
-
-
-class SubscribeView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    pagination_class = LimitPageNumberPagination
-
-    def post(self, request, id):
-        author = get_object_or_404(User, pk=id)
-        if author == request.user:
-            return Response(
-                {'errors': 'Нельзя подписаться на себя.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        _, created = Subscription.objects.get_or_create(
-            user=request.user,
-            author=author,
-        )
-        if not created:
-            return Response(
-                {'errors': 'Вы уже подписаны на этого автора.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return Response(
-            UserWithRecipesSerializer(
-                author,
-                context={'request': request},
-            ).data,
-            status=status.HTTP_201_CREATED,
-        )
-
-    def delete(self, request, id):
-        author = get_object_or_404(User, pk=id)
-        deleted, _ = Subscription.objects.filter(
-            user=request.user,
-            author=author,
-        ).delete()
-        if not deleted:
-            return Response(
-                {'errors': 'Вы не были подписаны на этого автора.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class SubscriptionsView(ListAPIView):
