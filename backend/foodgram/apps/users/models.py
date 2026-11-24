@@ -8,8 +8,13 @@ NAME_MAX_LENGTH = 150
 
 
 class User(AbstractUser):
-    email = models.EmailField(max_length=EMAIL_MAX_LENGTH, unique=True)
+    email = models.EmailField(
+        verbose_name='Адрес электронной почты',
+        max_length=EMAIL_MAX_LENGTH,
+        unique=True,
+    )
     username = models.CharField(
+        verbose_name='Имя пользователя',
         max_length=NAME_MAX_LENGTH,
         unique=True,
         validators=[
@@ -19,9 +24,20 @@ class User(AbstractUser):
             )
         ],
     )
-    first_name = models.CharField(max_length=NAME_MAX_LENGTH)
-    last_name = models.CharField(max_length=NAME_MAX_LENGTH)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    first_name = models.CharField(
+        verbose_name='Имя',
+        max_length=NAME_MAX_LENGTH,
+    )
+    last_name = models.CharField(
+        verbose_name='Фамилия',
+        max_length=NAME_MAX_LENGTH,
+    )
+    avatar = models.ImageField(
+        verbose_name='Аватар',
+        upload_to='avatars/',
+        null=True,
+        blank=True,
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
@@ -36,10 +52,16 @@ class User(AbstractUser):
 
 class Subscription(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='subscriptions'
+        User,
+        verbose_name='Подписчик',
+        on_delete=models.CASCADE,
+        related_name='subscriptions',
     )
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='subscribers'
+        User,
+        verbose_name='Автор',
+        on_delete=models.CASCADE,
+        related_name='subscribers',
     )
 
     class Meta:
