@@ -174,4 +174,3 @@ class ShoppingCart(UserRecipeBase):
 
     def __str__(self):
         return f'{self.user} добавил(а) в список покупок {self.recipe}'
-    
