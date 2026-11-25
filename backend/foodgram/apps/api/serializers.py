@@ -59,10 +59,7 @@ class UserSerializer(UserSerializer):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
-        return Subscription.objects.filter(
-            user=request.user,
-            author=obj
-        ).exists()
+        return request.user.subscriptions.filter(author=obj).exists()
 
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ('avatar', 'is_subscribed')
