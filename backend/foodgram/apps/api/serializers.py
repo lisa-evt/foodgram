@@ -3,11 +3,15 @@ import base64
 from apps.recipes.models import (MIN_AMOUNT_OF_INGREDIENTS, Favorite,
                                  Ingredient, Recipe, RecipeIngredient,
                                  ShoppingCart, Tag)
-from apps.users.models import Subscription, User
+from apps.users.models import Subscription
 from django.core.files.base import ContentFile
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
+
+
+User = get_user_model()
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -23,6 +27,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class Base64ImageField(serializers.ImageField):
+
     def to_internal_value(self, data):
         if not isinstance(data, str):
             return super().to_internal_value(data)
@@ -35,12 +40,12 @@ class Base64ImageField(serializers.ImageField):
         ext = header.split('/')[-1]
         try:
             decoded = base64.b64decode(imgstr, validate=True)
-        except ValueError:
+        except ValueError as exc:
             raise serializers.ValidationError(
                 'Не удалось декодировать данные изображения: '
                 'часть строки после ";base64," '
                 'должна быть корректной строкой base64.'
-            )
+            ) from exc
         return super().to_internal_value(
             ContentFile(decoded, name=f'temp.{ext}')
         )
