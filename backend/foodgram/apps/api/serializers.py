@@ -1,4 +1,5 @@
 import base64
+import string
 
 from apps.recipes.models import (MIN_AMOUNT_OF_INGREDIENTS, Favorite,
                                  Ingredient, Recipe, RecipeIngredient,
@@ -239,7 +240,7 @@ class UserWithRecipesSerializer(UserSerializer):
     def get_recipes(self, author):
         recipes = author.recipes.all()
         limit = self.context['request'].query_params.get('recipes_limit')
-        if limit and limit.isdigit():
+        if limit and set(limit) <= set(string.digits):
             recipes = recipes[:int(limit)]
         return RecipeShortSerializer(
             recipes, many=True, context=self.context
