@@ -12,6 +12,7 @@ from rest_framework import serializers
 
 
 User = get_user_model()
+ASCII_DIGITS = frozenset(string.digits)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -240,7 +241,7 @@ class UserWithRecipesSerializer(UserSerializer):
     def get_recipes(self, author):
         recipes = author.recipes.all()
         limit = self.context['request'].query_params.get('recipes_limit')
-        if limit and set(limit) <= set(string.digits):
+        if limit and set(limit) <= ASCII_DIGITS:
             recipes = recipes[:int(limit)]
         return RecipeShortSerializer(
             recipes, many=True, context=self.context
