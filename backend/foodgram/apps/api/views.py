@@ -20,7 +20,6 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
-
 User = get_user_model()
 
 AUTHENTICATED_ACTIONS = ('me', 'avatar', 'subscribe')

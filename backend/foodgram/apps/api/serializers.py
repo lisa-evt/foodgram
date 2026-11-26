@@ -4,12 +4,11 @@ import string
 from apps.recipes.models import (MIN_AMOUNT_OF_INGREDIENTS, Favorite,
                                  Ingredient, Recipe, RecipeIngredient,
                                  ShoppingCart, Tag)
-from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 from django.db import transaction
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
-
 
 User = get_user_model()
 ASCII_DIGITS = frozenset(string.digits)
