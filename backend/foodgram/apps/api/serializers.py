@@ -161,6 +161,11 @@ class RecipeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Нужно указать хотя бы один ингредиент.'
             )
+        for item in value:
+            if 'id' not in item:
+                raise serializers.ValidationError(
+                    'У каждого ингредиента должен быть указан id.'
+                )
         ingredients = [item['id'] for item in value]
         if len(ingredients) != len(set(ingredients)):
             raise serializers.ValidationError(
