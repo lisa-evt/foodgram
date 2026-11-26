@@ -238,11 +238,17 @@ class UserWithRecipesSerializer(UserSerializer):
             'recipes', 'recipes_count'
         )
 
-    def get_recipes(self, author):
-        recipes = author.recipes.all()
+    def _get_recipes_limit(self):
         limit = self.context['request'].query_params.get('recipes_limit')
         if limit and set(limit) <= ASCII_DIGITS:
-            recipes = recipes[:int(limit)]
+            return int(limit)
+        return None
+
+    def get_recipes(self, author):
+        recipes = author.recipes.all()
+        limit = self._get_recipes_limit()
+        if limit is not None:
+            recipes = recipes[:limit]
         return RecipeShortSerializer(
             recipes, many=True, context=self.context
         ).data
