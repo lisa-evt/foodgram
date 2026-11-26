@@ -14,7 +14,7 @@ from django.http import HttpResponse
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
-from rest_framework import status, viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
@@ -29,6 +29,7 @@ ADMIN_ONLY_ACTIONS = ('update', 'partial_update', 'destroy')
 
 class ReadOnlyViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
+    permission_classes = (permissions.AllowAny,)
 
 
 class TagViewSet(ReadOnlyViewSet):
@@ -106,6 +107,28 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return super().get_queryset().with_user_flags(self.request.user)
+
+    def _serialize_fresh(self, pk):
+        recipe = self.get_queryset().get(pk=pk)
+        return self.get_serializer(recipe).data
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            self._serialize_fresh(serializer.instance.pk),
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(
+            self.get_object(), data=request.data, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(self._serialize_fresh(serializer.instance.pk))
 
     def _add_or_remove(self, request, model, serializer_class):
         recipe = self.get_object()
