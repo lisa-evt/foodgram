@@ -3,7 +3,6 @@ import base64
 from apps.recipes.models import (MIN_AMOUNT_OF_INGREDIENTS, Favorite,
                                  Ingredient, Recipe, RecipeIngredient,
                                  ShoppingCart, Tag)
-from apps.users.models import Subscription
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -112,8 +111,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField()
     author = UserSerializer(read_only=True)
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
+    is_favorited = serializers.BooleanField(read_only=True)
+    is_in_shopping_cart = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Recipe

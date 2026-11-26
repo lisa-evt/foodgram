@@ -57,6 +57,33 @@ class Ingredient(models.Model):
         return f'{self.name}, {self.measurement_unit}'
 
 
+class RecipeQuerySet(models.QuerySet):
+    def with_user_flags(self, user):
+        if not user.is_authenticated:
+            return self.annotate(
+                is_favorited=models.Value(
+                    False, output_field=models.BooleanField()
+                ),
+                is_in_shopping_cart=models.Value(
+                    False, output_field=models.BooleanField()
+                ),
+            )
+        return self.annotate(
+            is_favorited=models.Exists(
+                Favorite.objects.filter(
+                    user=user,
+                    recipe=models.OuterRef('pk')
+                )
+            ),
+            is_in_shopping_cart=models.Exists(
+                ShoppingCart.objects.filter(
+                    user=user,
+                    recipe=models.OuterRef('pk')
+                )
+            )
+        )
+
+
 class Recipe(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -90,6 +117,7 @@ class Recipe(models.Model):
         verbose_name='Дата публикации',
         auto_now_add=True,
     )
+    objects = RecipeQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -174,3 +202,5 @@ class ShoppingCart(UserRecipeBase):
 
     def __str__(self):
         return f'{self.user} добавил(а) в список покупок {self.recipe}'
+
+

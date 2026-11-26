@@ -128,6 +128,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+    def get_queryset(self):
+        return super().get_queryset().with_user_flags(self.request.user)
+
     def _add_or_remove(self, request, pk, model):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
