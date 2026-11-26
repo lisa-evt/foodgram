@@ -4,11 +4,13 @@ import string
 from apps.recipes.models import (MIN_AMOUNT_OF_INGREDIENTS, Favorite,
                                  Ingredient, Recipe, RecipeIngredient,
                                  ShoppingCart, Tag)
+from apps.users.models import Subscription
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.db import transaction
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 User = get_user_model()
 ASCII_DIGITS = frozenset(string.digits)
@@ -130,24 +132,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             'cooking_time'
         )
 
-    def get_is_favorited(self, obj):
-        request = self.context.get('request')
-        if not request or not request.user.is_authenticated:
-            return False
-        return Favorite.objects.filter(
-            user=request.user,
-            recipe=obj
-        ).exists()
-
-    def get_is_in_shopping_cart(self, obj):
-        request = self.context.get('request')
-        if not request or not request.user.is_authenticated:
-            return False
-        return ShoppingCart.objects.filter(
-            user=request.user,
-            recipe=obj
-        ).exists()
-
     def validate_tags(self, value):
         if not value:
             raise serializers.ValidationError(
@@ -195,6 +179,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
+        validated_data['author'] = self.context['request'].user
         recipe = super().create(validated_data)
         self._create_ingredients(recipe, ingredients)
         return recipe
@@ -250,4 +235,67 @@ class UserWithRecipesSerializer(UserSerializer):
             recipes = recipes[:limit]
         return RecipeShortSerializer(
             recipes, many=True, context=self.context
+        ).data
+
+
+class UserRecipeSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        fields = ('user', 'recipe')
+
+    def to_representation(self, instance):
+        return RecipeShortSerializer(
+            instance.recipe, context=self.context
+        ).data
+
+
+class FavoriteSerializer(UserRecipeSerializer):
+
+    class Meta(UserRecipeSerializer.Meta):
+        model = Favorite
+        validators = (
+            UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=('user', 'recipe'),
+                message='Рецепт уже добавлен в избранное.',
+            ),
+        )
+
+
+class ShoppingCartSerializer(UserRecipeSerializer):
+
+    class Meta(UserRecipeSerializer.Meta):
+        model = ShoppingCart
+        validators = (
+            UniqueTogetherValidator(
+                queryset=ShoppingCart.objects.all(),
+                fields=('user', 'recipe'),
+                message='Рецепт уже добавлен в список покупок.',
+            ),
+        )
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Subscription
+        fields = ('user', 'author')
+        validators = (
+            UniqueTogetherValidator(
+                queryset=Subscription.objects.all(),
+                fields=('user', 'author'),
+                message='Вы уже подписаны на этого автора.',
+            ),
+        )
+
+    def validate(self, attrs):
+        if attrs['user'] == attrs['author']:
+            raise serializers.ValidationError('Нельзя подписаться на себя.')
+        return attrs
+
+    def to_representation(self, instance):
+        return UserWithRecipesSerializer(
+            instance.author, context=self.context
         ).data
