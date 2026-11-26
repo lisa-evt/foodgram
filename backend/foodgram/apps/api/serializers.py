@@ -193,20 +193,16 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(**validated_data)
-        recipe.tags.set(tags)
+        recipe = super().create(validated_data)
         self._create_ingredients(recipe, ingredients)
         return recipe
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         instance = super().update(instance, validated_data)
-        instance.tags.set(tags)
-        instance.recipe_ingredients.all().delete()
+        instance.ingredients.clear()
         self._create_ingredients(instance, ingredients)
         return instance
 
